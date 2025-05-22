@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"go-book/models"
+	"go-book/services"
 	"net/http"
 	"strconv"
 
@@ -97,4 +98,25 @@ func (bc *BookController) DeleteBook(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "图书已成功删除"})
+}
+
+// SearchBooks 搜索图书
+func (bc *BookController) SearchBooks(c *gin.Context) {
+	keyword := c.Query("keyword")
+	if keyword == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "请提供搜索关键词"})
+		return
+	}
+
+	// 创建豆瓣服务实例
+	doubanService := services.NewDoubanService()
+
+	// 搜索豆瓣图书
+	books, err := doubanService.SearchBooks(keyword)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "搜索图书失败: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, books)
 }

@@ -12,4 +12,5 @@ type Book struct {
 	Description string `json:"description" gorm:"type:text"`
 	Price       float64 `json:"price" gorm:"type:decimal(10,2)"`
 	Stock       int     `json:"stock" gorm:"not null;default:0"`
+	ISBN        string `json:"isbn" gorm:"size:13;index"` // ISBN号，用于图书检索
 }
