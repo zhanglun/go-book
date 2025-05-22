@@ -1,9 +1,7 @@
 package services
 
 import (
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
@@ -45,6 +43,7 @@ func (s *DoubanService) SearchBooks(keyword string) ([]DoubanBook, error) {
 	// 创建请求
 	req, err := http.NewRequest("GET", searchURL, nil)
 	if err != nil {
+		fmt.Printf("Error creating request: %v\n", err)
 		return nil, err
 	}
 
@@ -54,6 +53,7 @@ func (s *DoubanService) SearchBooks(keyword string) ([]DoubanBook, error) {
 	// 发送请求
 	resp, err := s.client.Do(req)
 	if err != nil {
+		fmt.Printf("Error creating request: %v\n", err)
 		return nil, err
 	}
 	defer resp.Body.Close()
@@ -61,35 +61,40 @@ func (s *DoubanService) SearchBooks(keyword string) ([]DoubanBook, error) {
 	// 使用goquery解析HTML
 	doc, err := goquery.NewDocumentFromReader(resp.Body)
 	if err != nil {
+		fmt.Printf("Error creating request: %v\n", err)
 		return nil, err
 	}
+
+	// 打印完整的HTML内容
+	htmlContent, _ := doc.Html()
+	fmt.Printf("HTML Content:\n%s\n", htmlContent)
 
 	var books []DoubanBook
 
 	// 解析搜索结果
-	doc.Find(".subject-item").Each(func(i int, s *goquery.Selection) {
+	doc.Find(".item-root").Each(func(i int, selection *goquery.Selection) {
 		book := DoubanBook{}
 
 		// 获取标题
-		book.Title = strings.TrimSpace(s.Find(".title a").Text())
+		book.Title = strings.TrimSpace(selection.Find(".title a").Text())
 
 		// 获取作者
-		book.Author = strings.TrimSpace(s.Find(".info .author").Text())
+		book.Author = strings.TrimSpace(selection.Find(".info .author").Text())
 
 		// 获取描述
-		book.Description = strings.TrimSpace(s.Find(".info p").Text())
+		book.Description = strings.TrimSpace(selection.Find(".info p").Text())
 
 		// 获取评分
-		ratingStr := s.Find(".rating_nums").Text()
+		ratingStr := selection.Find(".rating_nums").Text()
 		if ratingStr != "" {
 			fmt.Sscanf(ratingStr, "%f", &book.Rating)
 		}
 
 		// 获取封面图片
-		book.Cover, _ = s.Find(".pic img").Attr("src")
+		book.Cover, _ = selection.Find(".pic img").Attr("src")
 
 		// 获取价格和ISBN（从详情页获取）
-		if href, exists := s.Find(".title a").Attr("href"); exists {
+		if href, exists := selection.Find(".title a").Attr("href"); exists {
 			book.Price, book.ISBN = s.fetchBookDetail(href)
 		}
 

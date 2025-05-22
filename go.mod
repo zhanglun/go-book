@@ -1,4 +1,4 @@
-module github.com/zhanglun/go-book
+module go-book
 
 go 1.23.0
 
